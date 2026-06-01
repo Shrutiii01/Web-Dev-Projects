@@ -1,0 +1,164 @@
+// Showcase page bootstrap. Reads projects.json and renders the grid.
+
+const grid = document.getElementById("grid");
+const tpl = document.getElementById("card-template");
+const search = document.getElementById("search");
+const tagbar = document.getElementById("tagbar");
+const empty = document.getElementById("empty");
+
+const statCount = document.getElementById("stat-count");
+const statUpdated = document.getElementById("stat-updated");
+
+const state = { all: [], activeTag: null, query: "" };
+
+const PALETTES = [
+  ["#efe1cf", "#b86a2b"],
+  ["#e5ded0", "#1c1c1e"],
+  ["#dfe7df", "#2e6b3e"],
+  ["#ece4d8", "#7a4a1c"],
+  ["#e9e5dc", "#3a3a3c"],
+  ["#f0e6d2", "#a8541b"],
+];
+
+function paletteFor(slug) {
+  let h = 0;
+  for (let i = 0; i < slug.length; i++) h = (h * 31 + slug.charCodeAt(i)) >>> 0;
+  return PALETTES[h % PALETTES.length];
+}
+
+function initialsOf(title) {
+  return title
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
+}
+
+function placeholderThumb(project) {
+  const [bg, ink] = paletteFor(project.slug);
+  const text = initialsOf(project.title);
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200">
+  <rect width="320" height="200" fill="${bg}"/>
+  <g fill="none" stroke="${ink}" stroke-opacity="0.12" stroke-width="1">
+    <path d="M0 150 L320 60"/>
+    <path d="M0 170 L320 80"/>
+    <path d="M0 190 L320 100"/>
+  </g>
+  <text x="50%" y="54%" text-anchor="middle" font-family="-apple-system, SF Pro Display, Inter, sans-serif" font-weight="700" font-size="68" fill="${ink}" letter-spacing="-2">${text}</text>
+</svg>`.trim();
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function render() {
+  const q = state.query.trim().toLowerCase();
+  const list = state.all.filter((p) => {
+    if (state.activeTag && !p.tags.includes(state.activeTag)) return false;
+    if (!q) return true;
+    return (
+      p.title.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      (p.author?.name || "").toLowerCase().includes(q) ||
+      (p.author?.github || "").toLowerCase().includes(q) ||
+      p.tags.some((t) => t.toLowerCase().includes(q))
+    );
+  });
+
+  grid.replaceChildren();
+  if (!list.length) {
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+
+  for (const p of list) {
+    const node = tpl.content.firstElementChild.cloneNode(true);
+    const media = node.querySelector(".card__media");
+    const thumb = node.querySelector(".card__thumb");
+    const title = node.querySelector(".card__title");
+    const desc = node.querySelector(".card__desc");
+    const tags = node.querySelector(".card__tags");
+    const author = node.querySelector(".card__author");
+    const open = node.querySelector(".card__open");
+    const source = node.querySelector(".card__source");
+
+    media.href = p.entry;
+    thumb.style.backgroundImage = `url("${p.thumbnail || placeholderThumb(p)}")`;
+    title.textContent = p.title;
+    desc.textContent = p.description;
+    for (const t of p.tags) {
+      const li = document.createElement("li");
+      li.textContent = t;
+      tags.appendChild(li);
+    }
+    if (p.author) {
+      author.textContent = "by " + p.author.name;
+      author.href = `https://github.com/${p.author.github}`;
+    } else {
+      author.remove();
+    }
+    open.href = p.entry;
+    source.href = `https://github.com/cu-sanjay/Web-Dev-Projects/tree/main/${p.folder}`;
+    grid.appendChild(node);
+  }
+}
+
+function renderTagbar() {
+  const counts = new Map();
+  for (const p of state.all) for (const t of p.tags) counts.set(t, (counts.get(t) || 0) + 1);
+  const tags = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+
+  tagbar.replaceChildren();
+  const all = document.createElement("button");
+  all.type = "button";
+  all.textContent = "All";
+  all.setAttribute("aria-pressed", state.activeTag === null);
+  all.addEventListener("click", () => { state.activeTag = null; renderTagbar(); render(); });
+  tagbar.appendChild(all);
+
+  for (const [tag] of tags) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = tag;
+    b.setAttribute("aria-pressed", state.activeTag === tag);
+    b.addEventListener("click", () => {
+      state.activeTag = state.activeTag === tag ? null : tag;
+      renderTagbar();
+      render();
+    });
+    tagbar.appendChild(b);
+  }
+}
+
+function formatDate(iso) {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      year: "numeric", month: "short", day: "numeric",
+    });
+  } catch { return "—"; }
+}
+
+async function boot() {
+  try {
+    const res = await fetch("projects.json", { cache: "no-cache" });
+    if (!res.ok) throw new Error(res.statusText);
+    const data = await res.json();
+    state.all = data.projects || [];
+    statCount.textContent = state.all.length;
+    statUpdated.textContent = data.generatedAt ? formatDate(data.generatedAt) : "—";
+  } catch (err) {
+    statCount.textContent = "—";
+    statUpdated.textContent = "—";
+    console.warn("projects.json not available yet.", err);
+  }
+  renderTagbar();
+  render();
+}
+
+search.addEventListener("input", (e) => {
+  state.query = e.target.value;
+  render();
+});
+
+boot();
