@@ -1,0 +1,19 @@
+{
+  "title": "Memory Card Game",
+  "description": "A gamified memory match card game with 3D flip animations, leveling system, combo streaks, XP progression, multiple realms, and localStorage persistence.",
+  "author": {
+    "name": "Web Dev Projects",
+    "github": "cu-sanjay"
+  },
+  "tags": [
+    "game",
+    "memory",
+    "vanilla-js",
+    "gamified",
+    "localstorage",
+    "css-3d",
+    "canvas"
+  ],
+  "entry": "index.html",
+  "thumbnail": "thumbnail.svg"
+}
