@@ -293,8 +293,8 @@ main {
 }
 .program:hover {
   border-color: var(--accent);
-  box-shadow: 0 12px 32px rgba(184, 106, 43, 0.1);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(184, 106, 43, 0.12);
+  transform: translateY(-4px);
 }
 .program__logo {
   display: block;
@@ -302,11 +302,27 @@ main {
   width: 48px;
   height: 48px;
   object-fit: contain;
+  padding: 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
   animation: float 6s ease-in-out infinite;
 }
-.program:nth-child(2) .program__logo { animation-delay: 0.5s; }
-.program:nth-child(3) .program__logo { animation-delay: 1s; }
-.program:nth-child(4) .program__logo { animation-delay: 1.5s; }
+.program:nth-child(1) {
+  background: #ffe4ec;
+}
+
+.program:nth-child(2) {
+  background: #fff0f5;
+}
+
+.program:nth-child(3) {
+  background: #fff8d6;
+}
+
+.program:nth-child(4) {
+  background: #e8f4ff;
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
