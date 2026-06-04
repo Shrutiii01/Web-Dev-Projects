@@ -11,7 +11,8 @@
     "vanilla-js",
     "real-time",
     "localstorage",
-    "print"
+    "print",
+    "template"
   ],
   "entry": "index.html",
   "thumbnail": "thumbnail.svg"
